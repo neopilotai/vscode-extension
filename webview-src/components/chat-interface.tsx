@@ -6,7 +6,7 @@ import { ChatInput } from "./chat-input"
 import { useWebViewStore } from "../store/webview-store"
 
 export function ChatInterface() {
-  const { messages, isLoading } = useWebViewStore()
+  const { messages, isLoading, streamingMessageId } = useWebViewStore()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
@@ -15,7 +15,7 @@ export function ChatInterface() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, streamingMessageId])
 
   return (
     <div className="flex flex-col h-full">
@@ -39,7 +39,21 @@ export function ChatInterface() {
             {messages.map((message) => (
               <ChatMessage key={message.id} message={message} />
             ))}
-            {isLoading && (
+            {streamingMessageId && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-lg p-3 max-w-xs">
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-100"></div>
+                      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-200"></div>
+                    </div>
+                    <span className="text-xs text-muted-foreground">AI is typing...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {isLoading && !streamingMessageId && (
               <div className="flex justify-start">
                 <div className="bg-muted rounded-lg p-3 max-w-xs">
                   <div className="flex space-x-2">

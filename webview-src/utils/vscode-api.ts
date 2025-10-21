@@ -40,20 +40,25 @@ class VSCodeAPIClient {
     switch (message.type) {
       case "chatResponse": {
         const response = message.payload
-        store.addMessage({
-          id: response.id,
-          role: "assistant",
-          content: response.content,
-          timestamp: response.timestamp,
-        })
+        // Only add message if it has content (not an initial empty response)
+        if (response.content.trim()) {
+          store.addMessage({
+            id: response.id,
+            role: "assistant",
+            content: response.content,
+            timestamp: response.timestamp,
+          })
+        }
         store.setLoading(false)
         break
       }
 
       case "streamChunk": {
         const chunk = message.payload
-        // Handle streaming chunks
-        console.log("Stream chunk:", chunk)
+        // Update the streaming message in real-time
+        if (chunk.id.startsWith('response-')) {
+          store.updateStreamingMessage(chunk.id, chunk.chunk)
+        }
         break
       }
 

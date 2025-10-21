@@ -5,13 +5,13 @@
  */
 
 import * as vscode from "vscode"
-import { getAICompletion } from "../ai/completion"
+import { getAICompletionFull } from "../ai/completion"
 import type { CompletionPayload } from "../ai/completion"
 
 /**
  * Debounce utility for performance optimization
  */
-const createDebounce = <T extends (...args: unknown[]) => unknown>(
+const createDebounce = <T extends (...args: any[]) => any>(
   fn: T,
   delay: number,
 ): ((...args: Parameters<T>) => void) => {
@@ -81,18 +81,12 @@ const shouldTriggerCompletion = (document: vscode.TextDocument, position: vscode
  * Stream completion and collect full text
  */
 const streamCompletionText = async (payload: CompletionPayload): Promise<string> => {
-  let fullText = ""
-
   try {
-    for await (const chunk of getAICompletion(payload)) {
-      fullText += chunk
-    }
+    return await getAICompletionFull(payload)
   } catch (error) {
     console.error("[v0] Completion error:", error)
     return ""
   }
-
-  return fullText
 }
 
 /**
@@ -218,12 +212,25 @@ export const registerInlineCompletionProvider = (context: vscode.ExtensionContex
 export const createAdvancedInlineCompletionProvider = (
   onCompletionUpdate?: (items: vscode.InlineCompletionItem[]) => void,
 ): vscode.InlineCompletionItemProvider => {
+  // Store active completion requests to avoid duplicates
+  const activeRequests = new Map<string, AbortController>()
+
   const debouncedGetCompletion = createDebounce(
     async (
       document: vscode.TextDocument,
       position: vscode.Position,
       callback: (items: vscode.InlineCompletionItem[]) => void,
     ) => {
+      const docKey = document.uri.toString()
+
+      // Cancel previous request if still pending
+      if (activeRequests.has(docKey)) {
+        activeRequests.get(docKey)?.abort()
+      }
+
+      const controller = new AbortController()
+      activeRequests.set(docKey, controller)
+
       try {
         if (!shouldTriggerCompletion(document, position)) {
           callback([])
@@ -242,23 +249,25 @@ export const createAdvancedInlineCompletionProvider = (
           },
         }
 
-        let fullText = ""
+        const completionText = await getAICompletionFull(payload)
 
-        // Stream completion chunks
-        for await (const chunk of getAICompletion(payload)) {
-          fullText += chunk
+        if (controller.signal.aborted) {
+          return
+        }
 
-          // Update UI with partial completion
-          if (fullText.trim()) {
-            const range = new vscode.Range(position, position)
-            const item = createInlineCompletionItem(fullText, range)
-            callback([item])
-            onCompletionUpdate?.([item])
-          }
+        if (completionText.trim()) {
+          const range = new vscode.Range(position, position)
+          const item = createInlineCompletionItem(completionText, range)
+          callback([item])
+          onCompletionUpdate?.([item])
+        } else {
+          callback([])
         }
       } catch (error) {
         console.error("[v0] Advanced inline completion error:", error)
         callback([])
+      } finally {
+        activeRequests.delete(docKey)
       }
     },
     300, // Shorter debounce for real-time feel

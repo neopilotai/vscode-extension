@@ -1,6 +1,8 @@
 import * as vscode from "vscode"
-import { getAICompletion, type CompletionRequestPayload } from "./ai/completion"
-import type { WebViewToExtensionMessage, ExtensionToWebViewMessage } from "./types/messages"
+import path from "path"
+import { getAICompletionFull, type CompletionPayload } from "./ai/completion"
+import type { WebViewToExtensionMessage, ExtensionToWebViewMessage, CompletionRequest } from "./types/messages"
+import { AIService } from "./ai/ai-service"
 
 // ============================================================================
 // Types
@@ -10,6 +12,7 @@ interface ExtensionState {
   context: vscode.ExtensionContext
   webviewPanel: vscode.WebviewPanel | undefined
   inlineCompletionDisposable: vscode.Disposable | undefined
+  aiService: AIService | undefined
 }
 
 // ============================================================================
@@ -20,6 +23,7 @@ let state: ExtensionState = {
   context: null as any,
   webviewPanel: undefined,
   inlineCompletionDisposable: undefined,
+  aiService: undefined,
 }
 
 const setState = (updates: Partial<ExtensionState>): void => {
@@ -33,8 +37,8 @@ const getState = (): ExtensionState => state
 // ============================================================================
 
 const getWebviewContent = (webview: vscode.Webview, extensionUri: vscode.Uri): string => {
-  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", "webview", "index.js"))
-  const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, "dist", "webview", "style.css"))
+  const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(extensionUri.fsPath, "dist", "webview", "index.js")))
+  const styleUri = webview.asWebviewUri(vscode.Uri.file(path.join(extensionUri.fsPath, "dist", "webview", "style.css")))
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -59,7 +63,7 @@ const createWebviewPanel = (context: vscode.ExtensionContext): vscode.WebviewPan
   const panel = vscode.window.createWebviewPanel("aiAssistant", "AI Coding Assistant", vscode.ViewColumn.Beside, {
     enableScripts: true,
     retainContextWhenHidden: true,
-    localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "dist")],
+    localResourceRoots: [vscode.Uri.file(path.join(context.extensionUri.fsPath, "dist"))],
   })
 
   panel.webview.html = getWebviewContent(panel.webview, context.extensionUri)
@@ -101,6 +105,8 @@ const openAssistantPanel = (context: vscode.ExtensionContext): void => {
 // ============================================================================
 
 const handleWebViewMessage = async (message: WebViewToExtensionMessage, webview: vscode.Webview): Promise<void> => {
+  const currentState = getState()
+
   switch (message.type) {
     case "getCompletion": {
       await handleCompletionRequest(message.payload, webview)
@@ -108,20 +114,17 @@ const handleWebViewMessage = async (message: WebViewToExtensionMessage, webview:
     }
 
     case "chat": {
-      // Handle chat messages
-      console.log("[AI Assistant] Chat message received:", message.payload.content)
+      await handleChatRequest(message.payload, webview)
       break
     }
 
     case "explainCode": {
-      // Handle code explanation
-      console.log("[AI Assistant] Explain code request:", message.payload.selectedText)
+      await handleExplainCodeRequest(message.payload, webview)
       break
     }
 
     case "generateTests": {
-      // Handle test generation
-      console.log("[AI Assistant] Generate tests request:", message.payload.selectedText)
+      await handleGenerateTestsRequest(message.payload, webview)
       break
     }
 
@@ -137,25 +140,16 @@ const handleWebViewMessage = async (message: WebViewToExtensionMessage, webview:
   }
 }
 
-const handleCompletionRequest = async (payload: CompletionRequestPayload, webview: vscode.Webview): Promise<void> => {
+const handleCompletionRequest = async (payload: CompletionRequest, webview: vscode.Webview): Promise<void> => {
   try {
-    // Stream completion with chunks
-    let fullCompletion = ""
+    // Transform CompletionRequest to CompletionPayload
+    const completionPayload: CompletionPayload = {
+      code: payload.context,
+      language: payload.language,
+      cursor: payload.position,
+    }
 
-    const completion = await getAICompletion(payload, (chunk: string) => {
-      fullCompletion += chunk
-
-      // Send stream chunk to WebView
-      const streamMessage: ExtensionToWebViewMessage = {
-        type: "streamChunk",
-        payload: {
-          id: `completion-${Date.now()}`,
-          chunk,
-          isComplete: false,
-        },
-      }
-      webview.postMessage(streamMessage)
-    })
+    const completion = await getAICompletionFull(completionPayload)
 
     // Send completion response
     const response: ExtensionToWebViewMessage = {
@@ -186,42 +180,78 @@ const handleCompletionRequest = async (payload: CompletionRequestPayload, webvie
   }
 }
 
-const handleApplyEdit = async (
-  payload: { suggestionId: string; startLine: number; endLine: number; newCode: string; fileName: string },
-  webview: vscode.Webview,
-): Promise<void> => {
+const handleChatRequest = async (payload: { id: string; content: string; codeContext?: any }, webview: vscode.Webview): Promise<void> => {
   try {
-    const editor = vscode.window.activeTextEditor
+    const currentState = getState()
 
-    if (!editor || editor.document.fileName !== payload.fileName) {
-      throw new Error("File not found in active editor")
+    if (!currentState.aiService) {
+      throw new Error("AI service not initialized")
     }
 
-    const startPos = new vscode.Position(payload.startLine, 0)
-    const endPos = new vscode.Position(payload.endLine, 0)
-    const range = new vscode.Range(startPos, endPos)
-
-    await editor.edit((editBuilder) => {
-      editBuilder.replace(range, payload.newCode)
+    // Add user message to conversation history
+    currentState.aiService.addToHistory({
+      id: payload.id,
+      role: "user",
+      content: payload.content,
+      timestamp: Date.now(),
+      codeContext: payload.codeContext,
     })
 
+    // Send initial response to indicate AI is thinking
     const response: ExtensionToWebViewMessage = {
-      type: "editApplied",
+      type: "chatResponse",
       payload: {
-        success: true,
-        message: "Code edit applied successfully",
-        fileName: payload.fileName,
-        appliedLines: { start: payload.startLine, end: payload.endLine },
+        id: `response-${Date.now()}`,
+        content: "",
+        timestamp: Date.now(),
       },
     }
-
     webview.postMessage(response)
+
+    // Stream the AI response
+    let fullContent = ""
+    const messageId = `response-${Date.now()}`
+
+    for await (const chunk of currentState.aiService.chatStream(payload.content)) {
+      fullContent += chunk
+
+      // Send streaming chunk to WebView
+      const streamMessage: ExtensionToWebViewMessage = {
+        type: "streamChunk",
+        payload: {
+          id: messageId,
+          chunk,
+          isComplete: false,
+        },
+      }
+      webview.postMessage(streamMessage)
+    }
+
+    // Send final response
+    const finalResponse: ExtensionToWebViewMessage = {
+      type: "chatResponse",
+      payload: {
+        id: messageId,
+        content: fullContent,
+        timestamp: Date.now(),
+      },
+    }
+    webview.postMessage(finalResponse)
+
+    // Add assistant message to conversation history
+    currentState.aiService.addToHistory({
+      id: messageId,
+      role: "assistant",
+      content: fullContent,
+      timestamp: Date.now(),
+    })
+
   } catch (error) {
     const errorResponse: ExtensionToWebViewMessage = {
       type: "error",
       payload: {
-        code: "EDIT_ERROR",
-        message: "Failed to apply code edit",
+        code: "CHAT_ERROR",
+        message: "Failed to generate chat response",
         details: { error: String(error) },
       },
     }
@@ -229,12 +259,100 @@ const handleApplyEdit = async (
   }
 }
 
-// ============================================================================
-// Inline Completion Provider
-// ============================================================================
+const handleExplainCodeRequest = async (payload: { selectedText: string; fileName: string; language: string; lineNumber: number }, webview: vscode.Webview): Promise<void> => {
+  try {
+    const currentState = getState()
+
+    if (!currentState.aiService) {
+      throw new Error("AI service not initialized")
+    }
+
+    // Send initial response
+    const response: ExtensionToWebViewMessage = {
+      type: "chatResponse",
+      payload: {
+        id: `explain-${Date.now()}`,
+        content: "",
+        timestamp: Date.now(),
+      },
+    }
+    webview.postMessage(response)
+
+    // Get explanation from AI service
+    const explanation = await currentState.aiService.explainCode(payload.selectedText, payload.language)
+
+    // Send explanation response
+    const finalResponse: ExtensionToWebViewMessage = {
+      type: "chatResponse",
+      payload: {
+        id: `explain-${Date.now()}`,
+        content: `**Code Explanation:**\n\n${explanation}`,
+        timestamp: Date.now(),
+      },
+    }
+    webview.postMessage(finalResponse)
+
+  } catch (error) {
+    const errorResponse: ExtensionToWebViewMessage = {
+      type: "error",
+      payload: {
+        code: "EXPLAIN_ERROR",
+        message: "Failed to explain code",
+        details: { error: String(error) },
+      },
+    }
+    webview.postMessage(errorResponse)
+  }
+}
+
+const handleGenerateTestsRequest = async (payload: { selectedText: string; fileName: string; language: string; lineNumber: number }, webview: vscode.Webview): Promise<void> => {
+  try {
+    const currentState = getState()
+
+    if (!currentState.aiService) {
+      throw new Error("AI service not initialized")
+    }
+
+    // Send initial response
+    const response: ExtensionToWebViewMessage = {
+      type: "chatResponse",
+      payload: {
+        id: `tests-${Date.now()}`,
+        content: "",
+        timestamp: Date.now(),
+      },
+    }
+    webview.postMessage(response)
+
+    // Get tests from AI service
+    const tests = await currentState.aiService.generateTests(payload.selectedText, payload.language)
+
+    // Send tests response
+    const finalResponse: ExtensionToWebViewMessage = {
+      type: "chatResponse",
+      payload: {
+        id: `tests-${Date.now()}`,
+        content: `**Generated Tests:**\n\n\`\`\`${payload.language}\n${tests}\n\`\`\``,
+        timestamp: Date.now(),
+      },
+    }
+    webview.postMessage(finalResponse)
+
+  } catch (error) {
+    const errorResponse: ExtensionToWebViewMessage = {
+      type: "error",
+      payload: {
+        code: "TESTS_ERROR",
+        message: "Failed to generate tests",
+        details: { error: String(error) },
+      },
+    }
+    webview.postMessage(errorResponse)
+  }
+}
 
 const createInlineCompletionProvider = (): vscode.InlineCompletionItemProvider => ({
-  async provideInlineCompletionItems(document, position, context, token) {
+  async provideInlineCompletionItems(document, position, _context, token) {
     const line = document.lineAt(position.line)
     const lineText = line.text.substring(0, position.character)
     const language = document.languageId
@@ -257,11 +375,13 @@ const createInlineCompletionProvider = (): vscode.InlineCompletionItemProvider =
     }
 
     try {
-      const completion = await getAICompletion({
+      const completionPayload: CompletionPayload = {
         code: document.getText(),
         language,
         cursor: { line: position.line, character: position.character },
-      })
+      }
+
+      const completion = await getAICompletionFull(completionPayload)
 
       return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))]
     } catch (error) {
@@ -317,11 +437,13 @@ const registerCommands = (context: vscode.ExtensionContext): void => {
     }
 
     try {
-      const completion = await getAICompletion({
+      const completionPayload: CompletionPayload = {
         code: selectedText,
         language,
         cursor: { line: selection.active.line, character: selection.active.character },
-      })
+      }
+
+      const completion = await getAICompletionFull(completionPayload)
 
       await editor.edit((editBuilder) => {
         editBuilder.insert(selection.end, "\n" + completion)
@@ -382,6 +504,30 @@ export const activate = (context: vscode.ExtensionContext): void => {
   console.log("[AI Assistant] Extension activated")
 
   setState({ context })
+
+  // Get configuration
+  const config = vscode.workspace.getConfiguration("ai-assistant")
+  const apiKey = config.get<string>("apiKey") || process.env.OPENAI_API_KEY || process.env.AI_API_KEY
+  const model = config.get<string>("model") || "gpt-4-turbo"
+  const temperature = config.get<number>("temperature") || 0.7
+  const maxTokens = config.get<number>("maxTokens") || 2000
+  const provider = config.get<string>("provider") || "openai"
+
+  if (!apiKey && provider === "openai") {
+    vscode.window.showErrorMessage("AI Assistant: Please set your OpenAI API key in settings or environment variables.")
+    return
+  }
+
+  // Initialize AI service
+  const aiService = new AIService({
+    provider: provider as "openai" | "local",
+    model,
+    apiKey,
+    temperature,
+    maxTokens,
+  })
+
+  setState({ aiService })
 
   // Register all commands
   registerCommands(context)

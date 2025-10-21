@@ -12,9 +12,9 @@
   "main": "./dist/extension.js",
   "scripts": {
     "build": "npm run build:ext && npm run build:webview",
-    "build:ext": "tsc -p ./src",
+    "build:ext": "tsc -p .",
     "build:webview": "vite build --config vite.config.ts",
-    "dev": "concurrently \"tsc -p ./src -w\" \"vite build --config vite.config.ts -w\"",
+    "dev": "concurrently \"tsc -p . -w\" \"vite build --config vite.config.ts -w\"",
     "lint": "eslint src webview-src --ext ts,tsx",
     "vscode:prepublish": "npm run build"
   },
@@ -70,6 +70,47 @@
           "icon": "$(sparkle)"
         }
       ]
+    },
+    "configuration": {
+      "title": "AI Assistant",
+      "properties": {
+        "ai-assistant.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key for AI completions and chat"
+        },
+        "ai-assistant.model": {
+          "type": "string",
+          "default": "gpt-4-turbo",
+          "enum": ["gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+          "description": "AI model to use for completions"
+        },
+        "ai-assistant.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Temperature for AI responses (0-2)"
+        },
+        "ai-assistant.maxTokens": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 100,
+          "maximum": 8000,
+          "description": "Maximum tokens for AI responses"
+        },
+        "ai-assistant.provider": {
+          "type": "string",
+          "default": "openai",
+          "enum": ["openai", "local"],
+          "description": "AI provider (OpenAI or local endpoint)"
+        },
+        "ai-assistant.localEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8000",
+          "description": "Local AI endpoint URL (when using local provider)"
+        }
+      }
     }
   },
   "activationEvents": [

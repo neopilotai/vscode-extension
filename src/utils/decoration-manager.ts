@@ -1,5 +1,4 @@
 import * as vscode from "vscode"
-import type { Thenable } from "vscode"
 
 export interface Suggestion {
   id: string
@@ -43,7 +42,7 @@ export const clearDecorations = (editor: vscode.TextEditor): void => {
   editor.setDecorations(decorationType, [])
 }
 
-export const applySuggestionToEditor = (editor: vscode.TextEditor, suggestion: Suggestion): Thenable<boolean> => {
+export const applySuggestionToEditor = (editor: vscode.TextEditor, suggestion: Suggestion) => {
   return editor.edit((editBuilder) => {
     editBuilder.replace(suggestion.range, suggestion.text)
   })

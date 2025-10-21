@@ -5,14 +5,14 @@ import type { WebViewToExtensionMessage, ExtensionToWebViewMessage } from "./typ
  * Manages WebView communication and state
  */
 export class WebViewManager {
-  private webviews: Set<vscode.Webapi.Webview> = new Set()
+  private webviews: Set<vscode.Webview> = new Set()
   private messageHandlers: Map<string, (payload: unknown) => Promise<void>> = new Map()
 
-  constructor(private context: vscode.ExtensionContext) {
+  constructor() {
     this.setupMessageHandlers()
   }
 
-  registerWebview(webview: vscode.Webapi.Webview) {
+  registerWebview(webview: vscode.Webview) {
     this.webviews.add(webview)
   }
 
@@ -20,7 +20,9 @@ export class WebViewManager {
     const handler = this.messageHandlers.get(message.type)
     if (handler) {
       try {
-        await handler(message.payload)
+        // Only pass payload if the message has one
+        const payload = "payload" in message ? (message as any).payload : undefined
+        await handler(payload)
       } catch (error) {
         console.error(`Error handling message type ${message.type}:`, error)
         this.broadcastMessage({

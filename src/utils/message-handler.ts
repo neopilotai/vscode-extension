@@ -1,4 +1,7 @@
-import type { Message } from "../types/messages"
+import type { WebViewToExtensionMessage, ExtensionToWebViewMessage } from "../types/messages"
+
+// Union type for all messages
+export type Message = WebViewToExtensionMessage | ExtensionToWebViewMessage
 
 export const createMessage = <T extends Message>(type: T["type"], payload: Omit<T, "type" | "id" | "timestamp">): T =>
   ({
@@ -6,7 +9,7 @@ export const createMessage = <T extends Message>(type: T["type"], payload: Omit<
     id: generateId(),
     timestamp: Date.now(),
     ...payload,
-  }) as T
+  } as unknown as T)
 
 export const generateId = (): string => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 

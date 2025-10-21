@@ -1,0 +1,49 @@
+{
+  "contributes": {
+    "configuration": {
+      "title": "AI Assistant",
+      "properties": {
+        "ai-assistant.provider": {
+          "type": "string",
+          "enum": ["openai", "anthropic"],
+          "default": "openai",
+          "description": "AI provider to use"
+        },
+        "ai-assistant.model": {
+          "type": "string",
+          "default": "gpt-4",
+          "description": "Model to use for AI operations"
+        },
+        "ai-assistant.apiKey": {
+          "type": "string",
+          "description": "API key for the selected provider",
+          "markdownDescription": "API key for authentication. Can also be set via environment variables."
+        },
+        "ai-assistant.temperature": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 2,
+          "description": "Temperature for AI responses (0-2)"
+        },
+        "ai-assistant.maxTokens": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 100,
+          "maximum": 4000,
+          "description": "Maximum tokens for AI responses"
+        },
+        "ai-assistant.autoSuggest": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automatic suggestions while editing"
+        },
+        "ai-assistant.supportedLanguages": {
+          "type": "array",
+          "default": ["typescript", "javascript", "python", "java", "cpp"],
+          "description": "Languages to enable AI features for"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "name": "ai-vscode-extension",
+  "displayName": "AI Code Assistant",
+  "version": "0.1.0",
+  "description": "In-editor AI assistant with code completions and contextual chat",
+  "categories": [
+    "AI",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "publisher": "ai-assistant",
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "npm run build:ext && npm run build:webview",
+    "build:ext": "tsc -p ./src",
+    "build:webview": "vite build --config vite.config.ts",
+    "dev": "concurrently \"tsc -p ./src -w\" \"vite build --config vite.config.ts -w\"",
+    "lint": "eslint src webview-src --ext ts,tsx",
+    "vscode:prepublish": "npm run build"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "ai.assistant.start",
+        "title": "AI Assistant: Open Chat",
+        "category": "AI Assistant"
+      },
+      {
+        "command": "ai-assistant.getCompletion",
+        "title": "AI Assistant: Get Completion",
+        "category": "AI Assistant"
+      },
+      {
+        "command": "ai-assistant.explainCode",
+        "title": "AI Assistant: Explain Code",
+        "category": "AI Assistant"
+      },
+      {
+        "command": "ai-assistant.generateTests",
+        "title": "AI Assistant: Generate Tests",
+        "category": "AI Assistant"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ai.assistant.start",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a"
+      },
+      {
+        "command": "ai-assistant.getCompletion",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
+      }
+    ],
+    "views": {
+      "ai-assistant-sidebar": [
+        {
+          "id": "ai-assistant-chat",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ai-assistant-sidebar",
+          "title": "AI Assistant",
+          "icon": "$(sparkle)"
+        }
+      ]
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "dependencies": {
+    "@monaco-editor/react": "latest",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "immer": "latest",
+    "jiti": "latest",
+    "js-tiktoken": "^1.0.12",
+    "less": "latest",
+    "lightningcss": "latest",
+    "lucide-react": "^0.454.0",
+    "monaco-editor": "latest",
+    "next": "15.2.4",
+    "path": "latest",
+    "react": "^19",
+    "react-dom": "^19",
+    "sass": "latest",
+    "sass-embedded": "latest",
+    "stylus": "latest",
+    "sugarss": "latest",
+    "tailwind-merge": "^2.5.5",
+    "tailwindcss-animate": "^1.0.7",
+    "terser": "latest",
+    "tsx": "latest",
+    "use-sync-external-store": "latest",
+    "vscode": "latest",
+    "yaml": "latest",
+    "zustand": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.0.0",
+    "eslint": "^8.0.0",
+    "postcss": "^8.5",
+    "tailwindcss": "^4.1.9",
+    "typescript": "^5",
+    "vite": "^5.0.0"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  }
+}

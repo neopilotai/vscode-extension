@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Custom animations */
+@keyframes bounce-delay {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+}
+
+.delay-100 {
+  animation-delay: 0.1s;
+}
+
+.delay-200 {
+  animation-delay: 0.2s;
+}

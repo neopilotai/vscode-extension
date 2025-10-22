@@ -82,7 +82,11 @@
         "ai-assistant.model": {
           "type": "string",
           "default": "gpt-4-turbo",
-          "enum": ["gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+          "enum": [
+            "gpt-4-turbo",
+            "gpt-4",
+            "gpt-3.5-turbo"
+          ],
           "description": "AI model to use for completions"
         },
         "ai-assistant.temperature": {
@@ -102,13 +106,40 @@
         "ai-assistant.provider": {
           "type": "string",
           "default": "openai",
-          "enum": ["openai", "local"],
+          "enum": [
+            "openai",
+            "local"
+          ],
           "description": "AI provider (OpenAI or local endpoint)"
         },
         "ai-assistant.localEndpoint": {
           "type": "string",
           "default": "http://localhost:8000",
           "description": "Local AI endpoint URL (when using local provider)"
+        },
+        "ai-assistant.maxRetries": {
+          "type": "number",
+          "default": 3,
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Maximum number of retry attempts for AI API calls"
+        },
+        "ai-assistant.retryDelay": {
+          "type": "number",
+          "default": 1000,
+          "minimum": 100,
+          "maximum": 10000,
+          "description": "Delay between retry attempts in milliseconds"
+        },
+        "ai-assistant.enableTokenCounting": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable token counting and validation"
+        },
+        "ai-assistant.enableSafetyFilter": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable safety filters for code content"
         }
       }
     }
@@ -195,7 +226,7 @@
     "eslint": "^8.0.0",
     "postcss": "^8.5",
     "tailwindcss": "^4.1.9",
-    "typescript": "^5",
+    "typescript": "^5.9.3",
     "vite": "^5.0.0"
   },
   "engines": {

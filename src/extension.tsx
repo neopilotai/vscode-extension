@@ -351,7 +351,48 @@ const handleGenerateTestsRequest = async (payload: { selectedText: string; fileN
   }
 }
 
-const createInlineCompletionProvider = (): vscode.InlineCompletionItemProvider => ({
+const handleApplyEdit = async (
+  payload: { suggestionId: string; startLine: number; endLine: number; newCode: string; fileName: string },
+  webview: vscode.Webview,
+): Promise<void> => {
+  try {
+    const editor = vscode.window.activeTextEditor
+
+    if (!editor || editor.document.fileName !== payload.fileName) {
+      throw new Error("File not found in active editor")
+    }
+
+    const startPos = new vscode.Position(payload.startLine, 0)
+    const endPos = new vscode.Position(payload.endLine, 0)
+    const range = new vscode.Range(startPos, endPos)
+
+    await editor.edit((editBuilder) => {
+      editBuilder.replace(range, payload.newCode)
+    })
+
+    const response: ExtensionToWebViewMessage = {
+      type: "editApplied",
+      payload: {
+        success: true,
+        message: "Code edit applied successfully",
+        fileName: payload.fileName,
+        appliedLines: { start: payload.startLine, end: payload.endLine },
+      },
+    }
+
+    webview.postMessage(response)
+  } catch (error) {
+    const errorResponse: ExtensionToWebViewMessage = {
+      type: "error",
+      payload: {
+        code: "EDIT_ERROR",
+        message: "Failed to apply code edit",
+        details: { error: String(error) },
+      },
+    }
+    webview.postMessage(errorResponse)
+  }
+const createInlineCompletionProvider = (): vscode.InlineCompletionItemProvider => {
   async provideInlineCompletionItems(document, position, _context, token) {
     const line = document.lineAt(position.line)
     const lineText = line.text.substring(0, position.character)
@@ -512,11 +553,29 @@ export const activate = (context: vscode.ExtensionContext): void => {
   const temperature = config.get<number>("temperature") || 0.7
   const maxTokens = config.get<number>("maxTokens") || 2000
   const provider = config.get<string>("provider") || "openai"
+  const maxRetries = config.get<number>("maxRetries") || 3
+  const retryDelay = config.get<number>("retryDelay") || 1000
+  const enableTokenCounting = config.get<boolean>("enableTokenCounting") !== false
+  const enableSafetyFilter = config.get<boolean>("enableSafetyFilter") !== false
+  const localEndpoint = config.get<string>("localEndpoint") || "http://localhost:8000"
 
   if (!apiKey && provider === "openai") {
     vscode.window.showErrorMessage("AI Assistant: Please set your OpenAI API key in settings or environment variables.")
     return
   }
+
+  // Set environment variables from VSCode configuration for completion utilities
+  process.env.AI_PROVIDER = provider
+  process.env.OPENAI_API_KEY = apiKey
+  process.env.AI_API_KEY = apiKey
+  process.env.AI_MODEL = model
+  process.env.AI_TEMPERATURE = temperature.toString()
+  process.env.AI_MAX_TOKENS = maxTokens.toString()
+  process.env.AI_BASE_URL = localEndpoint
+  process.env.AI_MAX_RETRIES = maxRetries.toString()
+  process.env.AI_RETRY_DELAY = retryDelay.toString()
+  process.env.AI_ENABLE_TOKEN_COUNTING = enableTokenCounting.toString()
+  process.env.AI_ENABLE_SAFETY_FILTER = enableSafetyFilter.toString()
 
   // Initialize AI service
   const aiService = new AIService({

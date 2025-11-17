@@ -21,12 +21,12 @@ exports.BaseAIClient = BaseAIClient;
 class OpenAIClient extends BaseAIClient {
     constructor(config) {
         super(config);
-        this.apiKey = config.apiKey || process.env.OPENAI_API_KEY || "";
+        this.apiKey = config.apiKey || "";
         if (!this.apiKey) {
-            throw new Error("OpenAI API key not configured");
+            throw new Error("OpenAI API key not configured. Please provide it explicitly in the configuration.");
         }
     }
-    async generateCompletion(prompt, options) {
+    async generateCompletion(prompt, _options) {
         this.validateConfig();
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -124,7 +124,7 @@ class AnthropicClient extends BaseAIClient {
             throw new Error("Anthropic API key not configured");
         }
     }
-    async generateCompletion(prompt, options) {
+    async generateCompletion(prompt, _options) {
         this.validateConfig();
         const response = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -145,7 +145,7 @@ class AnthropicClient extends BaseAIClient {
         const data = (await response.json());
         return data.content[0].text;
     }
-    async *streamCompletion(prompt, options) {
+    async *streamCompletion(prompt, _options) {
         this.validateConfig();
         const response = await fetch("https://api.anthropic.com/v1/messages", {
             method: "POST",
@@ -160,7 +160,7 @@ class AnthropicClient extends BaseAIClient {
                 messages: [{ role: "user", content: prompt }],
                 stream: true,
             }),
-            signal: options?.signal,
+            signal: _options?.signal,
         });
         if (!response.ok) {
             throw new Error(`Anthropic API error: ${response.statusText}`);
@@ -185,11 +185,11 @@ class AnthropicClient extends BaseAIClient {
                         try {
                             const parsed = JSON.parse(data);
                             if (parsed.type === "content_block_delta" && parsed.delta?.text) {
-                                options?.onChunk?.(parsed.delta.text);
+                                _options?.onChunk?.(parsed.delta.text);
                                 yield parsed.delta.text;
                             }
                             else if (parsed.type === "message_stop") {
-                                options?.onComplete?.();
+                                _options?.onComplete?.();
                                 return;
                             }
                         }
@@ -201,7 +201,7 @@ class AnthropicClient extends BaseAIClient {
             }
         }
         catch (error) {
-            options?.onError?.(error);
+            _options?.onError?.(error);
             throw error;
         }
         finally {

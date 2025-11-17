@@ -8,7 +8,7 @@ export class ExtensionManager {
   private selectedText = ""
   private currentFile = ""
 
-  constructor(private context: vscode.ExtensionContext) {
+  constructor(private _context: vscode.ExtensionContext) {
     this.activeEditor = vscode.window.activeTextEditor
   }
 
@@ -65,7 +65,7 @@ export class ExtensionManager {
     return true
   }
 
-  addDecoration(line: number, message: string, type: "info" | "warning" | "error") {
+  addDecoration(line: number, _message: string, type: "info" | "warning" | "error") {
     if (!this.activeEditor) return
 
     const decorationType = vscode.window.createTextEditorDecorationType({

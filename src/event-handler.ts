@@ -13,7 +13,7 @@ export class EventHandler {
   private debounceDelay = 1000 // 1 second
 
   constructor(
-    private aiService: AIService,
+    private _aiService: AIService,
     private suggestionManager: SuggestionManager,
     private extensionManager: ExtensionManager,
   ) {

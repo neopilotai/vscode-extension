@@ -12,10 +12,10 @@ export class CommandRegistry {
   private streamingHandler: StreamingHandler
 
   constructor(
-    private aiService: AIService,
+    private _aiService: AIService,
     private suggestionManager: SuggestionManager,
-    private webviewManager: WebViewManager,
-    private extensionManager: ExtensionManager,
+    private _webviewManager: WebViewManager,
+    private _extensionManager: ExtensionManager,
   ) {
     this.streamingHandler = new StreamingHandler(webviewManager, aiService)
   }
@@ -97,7 +97,7 @@ export class CommandRegistry {
     }
   }
 
-  private async explainCode(uri?: vscode.Uri, range?: vscode.Range) {
+  private async explainCode(_uri?: vscode.Uri, _range?: vscode.Range) {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
       vscode.window.showErrorMessage("No active editor")
@@ -117,7 +117,7 @@ export class CommandRegistry {
     }
   }
 
-  private async generateTests(uri?: vscode.Uri, range?: vscode.Range) {
+  private async generateTests(_uri?: vscode.Uri, _range?: vscode.Range) {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
       vscode.window.showErrorMessage("No active editor")
@@ -137,7 +137,7 @@ export class CommandRegistry {
     }
   }
 
-  private async getSuggestions(uri?: vscode.Uri, range?: vscode.Range) {
+  private async getSuggestions(_uri?: vscode.Uri, _range?: vscode.Range) {
     const editor = vscode.window.activeTextEditor
     if (!editor) {
       vscode.window.showErrorMessage("No active editor")

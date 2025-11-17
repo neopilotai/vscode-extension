@@ -392,45 +392,49 @@ const handleApplyEdit = async (
     }
     webview.postMessage(errorResponse)
   }
+}
+
 const createInlineCompletionProvider = (): vscode.InlineCompletionItemProvider => {
-  async provideInlineCompletionItems(document, position, _context, token) {
-    const line = document.lineAt(position.line)
-    const lineText = line.text.substring(0, position.character)
-    const language = document.languageId
+  return {
+    async provideInlineCompletionItems(document, position, _context, token) {
+      const line = document.lineAt(position.line)
+      const lineText = line.text.substring(0, position.character)
+      const language = document.languageId
 
-    // Supported languages for inline completions
-    const supportedLanguages = ["javascript", "typescript", "python", "java", "cpp", "csharp", "go", "rust"]
+      // Supported languages for inline completions
+      const supportedLanguages = ["javascript", "typescript", "python", "java", "cpp", "csharp", "go", "rust"]
 
-    if (!supportedLanguages.includes(language)) {
-      return []
-    }
-
-    // Skip completions for comments
-    if (lineText.trim().startsWith("//") || lineText.trim().startsWith("#")) {
-      return []
-    }
-
-    // Skip if token is cancelled
-    if (token.isCancellationRequested) {
-      return []
-    }
-
-    try {
-      const completionPayload: CompletionPayload = {
-        code: document.getText(),
-        language,
-        cursor: { line: position.line, character: position.character },
+      if (!supportedLanguages.includes(language)) {
+        return []
       }
 
-      const completion = await getAICompletionFull(completionPayload)
+      // Skip completions for comments
+      if (lineText.trim().startsWith("//") || lineText.trim().startsWith("#")) {
+        return []
+      }
 
-      return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))]
-    } catch (error) {
-      console.error("[AI Assistant] Inline completion error:", error)
-      return []
-    }
-  },
-})
+      // Skip if token is cancelled
+      if (token.isCancellationRequested) {
+        return []
+      }
+
+      try {
+        const completionPayload: CompletionPayload = {
+          code: document.getText(),
+          language,
+          cursor: { line: position.line, character: position.character },
+        }
+
+        const completion = await getAICompletionFull(completionPayload)
+
+        return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))]
+      } catch (error) {
+        console.error("[AI Assistant] Inline completion error:", error)
+        return []
+      }
+    },
+  }
+}
 
 const registerInlineCompletionProvider = (context: vscode.ExtensionContext): void => {
   const provider = createInlineCompletionProvider()

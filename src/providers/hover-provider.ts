@@ -5,7 +5,7 @@ import type { AIService } from "../ai/ai-service"
  * Provides hover information with AI insights
  */
 export class AIHoverProvider implements vscode.HoverProvider {
-  constructor(private aiService: AIService) {}
+  constructor(private _aiService: AIService) {}
 
   async provideHover(
     document: vscode.TextDocument,
@@ -16,7 +16,7 @@ export class AIHoverProvider implements vscode.HoverProvider {
     if (!range) return null
 
     const word = document.getText(range)
-    const line = document.lineAt(position.line).text
+    const _line = document.lineAt(position.line).text
 
     // Only show hover for code-like words
     if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(word)) {
@@ -26,7 +26,7 @@ export class AIHoverProvider implements vscode.HoverProvider {
     // Get context around the word
     const startLine = Math.max(0, position.line - 5)
     const endLine = Math.min(document.lineCount, position.line + 5)
-    const context = document.getText(new vscode.Range(startLine, 0, endLine, 0))
+    const _context = document.getText(new vscode.Range(startLine, 0, endLine, 0))
 
     const markdown = new vscode.MarkdownString()
     markdown.appendMarkdown(`**${word}**\n\n`)

@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -314,39 +324,76 @@ const handleGenerateTestsRequest = async (payload, webview) => {
         webview.postMessage(errorResponse);
     }
 };
-const createInlineCompletionProvider = () => ({
-    async provideInlineCompletionItems(document, position, _context, token) {
-        const line = document.lineAt(position.line);
-        const lineText = line.text.substring(0, position.character);
-        const language = document.languageId;
-        // Supported languages for inline completions
-        const supportedLanguages = ["javascript", "typescript", "python", "java", "cpp", "csharp", "go", "rust"];
-        if (!supportedLanguages.includes(language)) {
-            return [];
+const handleApplyEdit = async (payload, webview) => {
+    try {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor || editor.document.fileName !== payload.fileName) {
+            throw new Error("File not found in active editor");
         }
-        // Skip completions for comments
-        if (lineText.trim().startsWith("//") || lineText.trim().startsWith("#")) {
-            return [];
-        }
-        // Skip if token is cancelled
-        if (token.isCancellationRequested) {
-            return [];
-        }
-        try {
-            const completionPayload = {
-                code: document.getText(),
-                language,
-                cursor: { line: position.line, character: position.character },
-            };
-            const completion = await (0, completion_1.getAICompletionFull)(completionPayload);
-            return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
-        }
-        catch (error) {
-            console.error("[AI Assistant] Inline completion error:", error);
-            return [];
-        }
-    },
-});
+        const startPos = new vscode.Position(payload.startLine, 0);
+        const endPos = new vscode.Position(payload.endLine, 0);
+        const range = new vscode.Range(startPos, endPos);
+        await editor.edit((editBuilder) => {
+            editBuilder.replace(range, payload.newCode);
+        });
+        const response = {
+            type: "editApplied",
+            payload: {
+                success: true,
+                message: "Code edit applied successfully",
+                fileName: payload.fileName,
+                appliedLines: { start: payload.startLine, end: payload.endLine },
+            },
+        };
+        webview.postMessage(response);
+    }
+    catch (error) {
+        const errorResponse = {
+            type: "error",
+            payload: {
+                code: "EDIT_ERROR",
+                message: "Failed to apply code edit",
+                details: { error: String(error) },
+            },
+        };
+        webview.postMessage(errorResponse);
+    }
+};
+const createInlineCompletionProvider = () => {
+    return {
+        async provideInlineCompletionItems(document, position, _context, token) {
+            const line = document.lineAt(position.line);
+            const lineText = line.text.substring(0, position.character);
+            const language = document.languageId;
+            // Supported languages for inline completions
+            const supportedLanguages = ["javascript", "typescript", "python", "java", "cpp", "csharp", "go", "rust"];
+            if (!supportedLanguages.includes(language)) {
+                return [];
+            }
+            // Skip completions for comments
+            if (lineText.trim().startsWith("//") || lineText.trim().startsWith("#")) {
+                return [];
+            }
+            // Skip if token is cancelled
+            if (token.isCancellationRequested) {
+                return [];
+            }
+            try {
+                const completionPayload = {
+                    code: document.getText(),
+                    language,
+                    cursor: { line: position.line, character: position.character },
+                };
+                const completion = await (0, completion_1.getAICompletionFull)(completionPayload);
+                return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
+            }
+            catch (error) {
+                console.error("[AI Assistant] Inline completion error:", error);
+                return [];
+            }
+        },
+    };
+};
 const registerInlineCompletionProvider = (context) => {
     const provider = createInlineCompletionProvider();
     const disposable = vscode.languages.registerInlineCompletionItemProvider({ pattern: "**" }, provider);
@@ -439,10 +486,27 @@ const activate = (context) => {
     const temperature = config.get("temperature") || 0.7;
     const maxTokens = config.get("maxTokens") || 2000;
     const provider = config.get("provider") || "openai";
+    const maxRetries = config.get("maxRetries") || 3;
+    const retryDelay = config.get("retryDelay") || 1000;
+    const enableTokenCounting = config.get("enableTokenCounting") !== false;
+    const enableSafetyFilter = config.get("enableSafetyFilter") !== false;
+    const localEndpoint = config.get("localEndpoint") || "http://localhost:8000";
     if (!apiKey && provider === "openai") {
         vscode.window.showErrorMessage("AI Assistant: Please set your OpenAI API key in settings or environment variables.");
         return;
     }
+    // Set environment variables from VSCode configuration for completion utilities
+    process.env.AI_PROVIDER = provider;
+    process.env.OPENAI_API_KEY = apiKey;
+    process.env.AI_API_KEY = apiKey;
+    process.env.AI_MODEL = model;
+    process.env.AI_TEMPERATURE = temperature.toString();
+    process.env.AI_MAX_TOKENS = maxTokens.toString();
+    process.env.AI_BASE_URL = localEndpoint;
+    process.env.AI_MAX_RETRIES = maxRetries.toString();
+    process.env.AI_RETRY_DELAY = retryDelay.toString();
+    process.env.AI_ENABLE_TOKEN_COUNTING = enableTokenCounting.toString();
+    process.env.AI_ENABLE_SAFETY_FILTER = enableSafetyFilter.toString();
     // Initialize AI service
     const aiService = new ai_service_1.AIService({
         provider: provider,

@@ -1,7 +1,6 @@
 /**
  * Shared message types for communication between VS Code extension and WebView
  */
-/// <reference types="node" />
 export type WebViewToExtensionMessage = {
     type: "chat";
     payload: ChatMessage;

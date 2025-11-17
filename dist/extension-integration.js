@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExtensionIntegration = void 0;
 const vscode = __importStar(require("vscode"));
@@ -43,7 +53,7 @@ class ExtensionIntegration {
         this.context = context;
         this.configManager = new config_manager_1.ConfigManager();
         this.extensionManager = new extension_manager_1.ExtensionManager(context);
-        this.webviewManager = new webview_manager_1.WebViewManager(context);
+        this.webviewManager = new webview_manager_1.WebViewManager();
         this.aiService = new ai_service_1.AIService(this.configManager.getAIConfig());
         this.suggestionManager = new suggestion_manager_1.SuggestionManager(this.aiService);
         this.eventHandler = new event_handler_1.EventHandler(this.aiService, this.suggestionManager, this.extensionManager);
@@ -64,7 +74,7 @@ class ExtensionIntegration {
     registerProviders() {
         // Code Lens Provider
         const codeLensProvider = new code_lens_provider_1.AICodeLensProvider(this.aiService);
-        this.context.subscriptions.push(vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider));
+        this.context.subscriptions.push(vscode.languages.registerCodeLensProvider("file", codeLensProvider));
         // Hover Provider
         const hoverProvider = new hover_provider_1.AIHoverProvider(this.aiService);
         this.context.subscriptions.push(vscode.languages.registerHoverProvider({ scheme: "file" }, hoverProvider));

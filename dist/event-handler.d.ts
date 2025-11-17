@@ -6,13 +6,13 @@ import type { ExtensionManager } from "./extension-manager";
  * Handles editor events and triggers AI operations
  */
 export declare class EventHandler {
-    private aiService;
+    private _aiService;
     private suggestionManager;
     private extensionManager;
     private configManager;
     private debounceTimer;
     private debounceDelay;
-    constructor(aiService: AIService, suggestionManager: SuggestionManager, extensionManager: ExtensionManager);
+    constructor(_aiService: AIService, suggestionManager: SuggestionManager, extensionManager: ExtensionManager);
     onEditorChange(editor: vscode.TextEditor): void;
     onSelectionChange(event: vscode.TextEditorSelectionChangeEvent): void;
     onTextChange(event: vscode.TextDocumentChangeEvent): void;

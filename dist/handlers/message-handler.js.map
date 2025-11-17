@@ -1,1 +1,1 @@
-{"version":3,"file":"message-handler.js","sourceRoot":"","sources":["../../src/handlers/message-handler.ts"],"names":[],"mappings":";;;AAEO,MAAM,oBAAoB,GAAG,CAAC,OAAgC,EAAE,QAAa,EAAQ,EAAE;IAC5F,mDAAmD;IACnD,kDAAkD;AACpD,CAAC,CAAA;AAHY,QAAA,oBAAoB,wBAGhC"}
+{"version":3,"file":"message-handler.js","sourceRoot":"","sources":["../../src/handlers/message-handler.ts"],"names":[],"mappings":";;;AAEO,MAAM,oBAAoB,GAAG,CAAC,QAAiC,EAAE,SAAc,EAAQ,EAAE;IAC9F,mDAAmD;IACnD,kDAAkD;AACpD,CAAC,CAAA;AAHY,QAAA,oBAAoB,wBAGhC"}

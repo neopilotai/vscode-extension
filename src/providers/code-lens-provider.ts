@@ -10,7 +10,7 @@ export class AICodeLensProvider implements vscode.CodeLensProvider {
 
   onDidChangeCodeLenses = this.onDidChangeCodeLensesEmitter.event
 
-  constructor(private aiService: AIService) {
+  constructor(private _aiService: AIService) {
     vscode.workspace.onDidChangeTextDocument(() => {
       this.onDidChangeCodeLensesEmitter.fire()
     })

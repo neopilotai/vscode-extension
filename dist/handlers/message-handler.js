@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupMessageHandlers = void 0;
-const setupMessageHandlers = (context, aiClient) => {
+const setupMessageHandlers = (_context, _aiClient) => {
     // Message handling logic would be implemented here
     // This connects webview messages to AI processing
 };

@@ -12,7 +12,7 @@ export declare class AIService {
     clearHistory(): void;
     private buildPrompt;
     chat(userMessage: string): Promise<string>;
-    chatStream(userMessage: string): AsyncGenerator<string, void, unknown>;
+    chatStream(userMessage: string): AsyncGenerator<string, void, any>;
     getCompletion(code: string, language: string): Promise<string>;
     explainCode(code: string, language: string): Promise<string>;
     generateTests(code: string, language: string): Promise<string>;

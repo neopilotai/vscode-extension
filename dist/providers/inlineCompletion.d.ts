@@ -3,7 +3,6 @@
  * Provides Copilot-like ghost text suggestions with debouncing
  * Uses AsyncGenerator for streaming completions
  */
-/// <reference types="node" />
 import * as vscode from "vscode";
 /**
  * Main inline completion provider function
@@ -19,5 +18,5 @@ export declare const registerInlineCompletionProvider: (context: vscode.Extensio
  * Alternative: Create an inline completion provider with real-time updates
  * This version uses a different approach for better UX
  */
-export declare const createAdvancedInlineCompletionProvider: (onCompletionUpdate?: ((items: vscode.InlineCompletionItem[]) => void) | undefined) => vscode.InlineCompletionItemProvider;
+export declare const createAdvancedInlineCompletionProvider: (onCompletionUpdate?: (items: vscode.InlineCompletionItem[]) => void) => vscode.InlineCompletionItemProvider;
 //# sourceMappingURL=inlineCompletion.d.ts.map

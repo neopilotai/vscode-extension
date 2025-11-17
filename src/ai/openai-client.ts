@@ -23,7 +23,7 @@ export const createOpenAIClient = (config: AIConfig) => {
       throw new Error(`OpenAI API error: ${response.statusText}`)
     }
 
-    const data = await response.json()
+    const data = (await response.json()) as { choices: Array<{ message: { content: string }; finish_reason: string }>; usage: unknown }
     return {
       text: data.choices[0].message.content,
       finishReason: data.choices[0].finish_reason,

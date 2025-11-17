@@ -15,7 +15,7 @@ export declare abstract class BaseAIClient {
 export declare class OpenAIClient extends BaseAIClient {
     private apiKey;
     constructor(config: AIModelConfig);
-    generateCompletion(prompt: string, options?: AIStreamOptions): Promise<string>;
+    generateCompletion(prompt: string, _options?: AIStreamOptions): Promise<string>;
     streamCompletion(prompt: string, options?: AIStreamOptions): AsyncGenerator<string>;
 }
 /**
@@ -24,8 +24,8 @@ export declare class OpenAIClient extends BaseAIClient {
 export declare class AnthropicClient extends BaseAIClient {
     private apiKey;
     constructor(config: AIModelConfig);
-    generateCompletion(prompt: string, options?: AIStreamOptions): Promise<string>;
-    streamCompletion(prompt: string, options?: AIStreamOptions): AsyncGenerator<string>;
+    generateCompletion(prompt: string, _options?: AIStreamOptions): Promise<string>;
+    streamCompletion(prompt: string, _options?: AIStreamOptions): AsyncGenerator<string>;
 }
 /**
  * Factory for creating AI clients

@@ -7,12 +7,12 @@ import type { ExtensionManager } from "./extension-manager";
  * Registers and handles all extension commands
  */
 export declare class CommandRegistry {
-    private aiService;
+    private _aiService;
     private suggestionManager;
-    private webviewManager;
-    private extensionManager;
+    private _webviewManager;
+    private _extensionManager;
     private streamingHandler;
-    constructor(aiService: AIService, suggestionManager: SuggestionManager, webviewManager: WebViewManager, extensionManager: ExtensionManager);
+    constructor(_aiService: AIService, suggestionManager: SuggestionManager, _webviewManager: WebViewManager, _extensionManager: ExtensionManager);
     registerCommands(context: vscode.ExtensionContext): void;
     private openChat;
     private getCompletion;

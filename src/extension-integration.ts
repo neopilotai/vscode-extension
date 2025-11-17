@@ -25,7 +25,7 @@ export class ExtensionIntegration {
   constructor(private context: vscode.ExtensionContext) {
     this.configManager = new ConfigManager()
     this.extensionManager = new ExtensionManager(context)
-    this.webviewManager = new WebViewManager(context)
+    this.webviewManager = new WebViewManager()
     this.aiService = new AIService(this.configManager.getAIConfig())
     this.suggestionManager = new SuggestionManager(this.aiService)
     this.eventHandler = new EventHandler(this.aiService, this.suggestionManager, this.extensionManager)
@@ -58,7 +58,7 @@ export class ExtensionIntegration {
   private registerProviders() {
     // Code Lens Provider
     const codeLensProvider = new AICodeLensProvider(this.aiService)
-    this.context.subscriptions.push(vscode.languages.registerCodeLensProvider({ scheme: "file" }, codeLensProvider))
+    this.context.subscriptions.push(vscode.languages.registerCodeLensProvider("file", codeLensProvider))
 
     // Hover Provider
     const hoverProvider = new AIHoverProvider(this.aiService)

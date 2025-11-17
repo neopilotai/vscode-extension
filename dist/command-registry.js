@@ -15,13 +15,23 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommandRegistry = void 0;
 const vscode = __importStar(require("vscode"));
@@ -30,11 +40,11 @@ const streaming_handler_1 = require("./ai/streaming-handler");
  * Registers and handles all extension commands
  */
 class CommandRegistry {
-    constructor(aiService, suggestionManager, webviewManager, extensionManager) {
-        this.aiService = aiService;
+    constructor(_aiService, suggestionManager, _webviewManager, _extensionManager) {
+        this._aiService = _aiService;
         this.suggestionManager = suggestionManager;
-        this.webviewManager = webviewManager;
-        this.extensionManager = extensionManager;
+        this._webviewManager = _webviewManager;
+        this._extensionManager = _extensionManager;
         this.streamingHandler = new streaming_handler_1.StreamingHandler(webviewManager, aiService);
     }
     registerCommands(context) {
@@ -78,7 +88,7 @@ class CommandRegistry {
             vscode.window.showErrorMessage(`Failed to get completion: ${String(error)}`);
         }
     }
-    async explainCode(uri, range) {
+    async explainCode(_uri, _range) {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor");
@@ -96,7 +106,7 @@ class CommandRegistry {
             vscode.window.showErrorMessage(`Failed to explain code: ${String(error)}`);
         }
     }
-    async generateTests(uri, range) {
+    async generateTests(_uri, _range) {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor");
@@ -114,7 +124,7 @@ class CommandRegistry {
             vscode.window.showErrorMessage(`Failed to generate tests: ${String(error)}`);
         }
     }
-    async getSuggestions(uri, range) {
+    async getSuggestions(_uri, _range) {
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No active editor");

@@ -117,7 +117,7 @@ class StreamingHandler {
                     suggestions: [
                         {
                             id: "test-suggestion",
-                            type: "snippet",
+                            type: "optimization",
                             title: "Generated Tests",
                             description: "Unit tests for the selected code",
                             code: tests,

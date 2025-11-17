@@ -10,7 +10,7 @@ export class AICompletionProvider implements vscode.CompletionItemProvider {
   async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken,
+    _token: vscode.CancellationToken,
   ): Promise<vscode.CompletionItem[] | vscode.CompletionList | null> {
     // Get the current line up to the cursor
     const line = document.lineAt(position.line).text

@@ -29,13 +29,13 @@ export class OpenAIClient extends BaseAIClient {
 
   constructor(config: AIModelConfig) {
     super(config)
-    this.apiKey = config.apiKey || process.env.OPENAI_API_KEY || ""
+    this.apiKey = config.apiKey || ""
     if (!this.apiKey) {
-      throw new Error("OpenAI API key not configured")
+      throw new Error("OpenAI API key not configured. Please provide it explicitly in the configuration.")
     }
   }
 
-  async generateCompletion(prompt: string, options?: AIStreamOptions): Promise<string> {
+  async generateCompletion(prompt: string, _options?: AIStreamOptions): Promise<string> {
     this.validateConfig()
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -146,7 +146,7 @@ export class AnthropicClient extends BaseAIClient {
     }
   }
 
-  async generateCompletion(prompt: string, options?: AIStreamOptions): Promise<string> {
+  async generateCompletion(prompt: string, _options?: AIStreamOptions): Promise<string> {
     this.validateConfig()
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -171,7 +171,7 @@ export class AnthropicClient extends BaseAIClient {
     return data.content[0].text
   }
 
-  async *streamCompletion(prompt: string, options?: AIStreamOptions): AsyncGenerator<string> {
+  async *streamCompletion(prompt: string, _options?: AIStreamOptions): AsyncGenerator<string> {
     this.validateConfig()
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -187,7 +187,7 @@ export class AnthropicClient extends BaseAIClient {
         messages: [{ role: "user", content: prompt }],
         stream: true,
       }),
-      signal: options?.signal,
+      signal: _options?.signal,
     })
 
     if (!response.ok) {
@@ -222,10 +222,10 @@ export class AnthropicClient extends BaseAIClient {
               }
 
               if (parsed.type === "content_block_delta" && parsed.delta?.text) {
-                options?.onChunk?.(parsed.delta.text)
+                _options?.onChunk?.(parsed.delta.text)
                 yield parsed.delta.text
               } else if (parsed.type === "message_stop") {
-                options?.onComplete?.()
+                _options?.onComplete?.()
                 return
               }
             } catch {
@@ -235,7 +235,7 @@ export class AnthropicClient extends BaseAIClient {
         }
       }
     } catch (error) {
-      options?.onError?.(error as Error)
+      _options?.onError?.(error as Error)
       throw error
     } finally {
       reader.releaseLock()

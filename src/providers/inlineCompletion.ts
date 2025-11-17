@@ -31,7 +31,7 @@ const createDebounce = <T extends (...args: any[]) => any>(
  */
 const getCodeContext = (document: vscode.TextDocument, position: vscode.Position): { code: string; cursor: number } => {
   const text = document.getText()
-  const offset = document.offsetAt(position)
+  const _offset = document.offsetAt(position)
 
   // Get surrounding context (up to 50 lines before and after)
   const lines = text.split("\n")
@@ -172,11 +172,11 @@ export const createInlineCompletionProvider = (): vscode.InlineCompletionItemPro
     provideInlineCompletionItems: (
       document: vscode.TextDocument,
       position: vscode.Position,
-      context: vscode.InlineCompletionContext,
-      token: vscode.CancellationToken,
+      _context: vscode.InlineCompletionContext,
+      _token: vscode.CancellationToken,
     ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> => {
       // Return empty array immediately, then fetch asynchronously
-      debouncedGetCompletion(document, position, (items) => {
+      debouncedGetCompletion(document, position, (_items) => {
         // Note: VS Code doesn't support async updates to inline completions
         // This is a limitation of the current API
         // For production, consider using a different approach or polling
